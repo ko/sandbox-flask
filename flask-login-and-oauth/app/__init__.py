@@ -5,7 +5,6 @@ from flask.ext.login import LoginManager
 
 import settings
 
-
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = settings.SECRET_KEY
@@ -14,7 +13,10 @@ app.config['DEBUG'] = settings.DEBUG
 app.config['DATABASE_FILE'] = settings.DATABASE_FILE
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_ECHO'] = settings.SQLALCHEMY_ECHO
-db = SQLAlchemy(app)
+
+
+###########################
+
 
 oauth = OAuth()
 
@@ -28,8 +30,22 @@ facebook = oauth.remote_app('facebook',
     request_token_params = { 'scope': settings.FACEBOOK_APP_SCOPE }
 )
 
+
+###########################
+
+
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+###########################
+
+
+db = SQLAlchemy(app)
+
+
+###########################
+
 
 from app import views
 

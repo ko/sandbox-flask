@@ -22,11 +22,17 @@ def unauthorized(userid):
 
 @facebook.tokengetter
 def get_facebook_token():
-    return session.get('facebook_token')
+#    if current_user.is_authenticated():
+        return session.get('facebook_token')
+#    else:
+#        return None
 
 @app.route('/login/authorized')
 @facebook.authorized_handler
 def facebook_authorized(resp):
+
+    next_url = request.args.get('next') or url_for('secret')
+
     if resp is None:
         return 'Access denied: reason=%s error=%s' % (
             request.args['error_reason'],
@@ -36,8 +42,16 @@ def facebook_authorized(resp):
     session['facebook_token'] = (resp['access_token'], '')
     me = facebook.get('/me')
 
-    return 'Logged in as id=%s name=%s redirect=%s' % \
-            (me.data['id'], me.data['name'], request.args.get('next'))
+    account = Account.query.filter_by(facebook_id = me.data['id']).first()
+    if account is None:
+        account = Account(facebook_id=me.data['id'], facebook_token=resp['access_token'])
+
+        db.session.add(account)
+        db.session.commit()
+
+    login_user(account)
+
+    return redirect(next_url)
 
 
 ###########################
@@ -67,13 +81,14 @@ def secret():
 
 @app.route('/')
 def index():
-    return redirect(url_for('login'))
+    return 'index page'
 
 
 ###########################
 
 
 if __name__ == "__main__":
+    db.create_all()
     app.debug = True
     app.run()
 
