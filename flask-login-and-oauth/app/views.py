@@ -4,6 +4,11 @@ from flask.ext.login import login_user, logout_user, login_required, current_use
 from app import app, db, facebook, login_manager
 from models import Account
 
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import BadSignature, SignatureExpired
+
+from base64 import b64decode
+
 
 ###########################
 
@@ -16,16 +21,49 @@ def load_user(userid):
 def unauthorized(userid):
     return redirect(url_for('index'))
 
+@login_manager.header_loader
+def load_user_from_header(header_val):
+    if header_val.startswith('Basic '):
+        header_val = header_val.replace('Basic ', '', 1)
+    try: 
+        header_val = b64decode(header_val)
+    except TypeError:
+        pass
+
+    s = Serializer(app.config['SECRET_KEY'])
+    try:
+        data = s.loads(header_val)
+    except SignatureExpired:
+        # TODO handle expirations/refresh
+        return None # valid,expired
+    except BadSignature:
+        return None # invalid
+
+    account = Account.query.filter_by(id=data['id']).first()
+    return account
+
+###########################
+
+def create_user_facebook(facebook_id, facebook_token):
+    account = Account(facebook_id=facebook_id, facebook_token=facebook_token)
+    db.session.add(account)
+    db.session.commit()
+
+    # XXX no account.id pk until the first commit.
+    # so we generate_auth_token and recommit
+    account.generate_auth_token()
+    db.session.add(account)
+    db.session.commit()
+
+    return account
+
 
 ###########################
 
 
 @facebook.tokengetter
 def get_facebook_token():
-#    if current_user.is_authenticated():
-        return session.get('facebook_token')
-#    else:
-#        return None
+    return session.get('facebook_token')
 
 @app.route('/login/authorized')
 @facebook.authorized_handler
@@ -44,8 +82,12 @@ def facebook_authorized(resp):
 
     account = Account.query.filter_by(facebook_id = me.data['id']).first()
     if account is None:
-        account = Account(facebook_id=me.data['id'], facebook_token=resp['access_token'])
-
+        account = create_user_facebook(facebook_id=me.data['id'], 
+                facebook_token=resp['access_token'])
+    else:
+        # TODO don't generate the token _every_ time...
+        # XXX check if expired? or keep that in header_loader?
+        account.generate_auth_token()
         db.session.add(account)
         db.session.commit()
 
@@ -70,6 +112,23 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+# TODO POST this
+@app.route('/login/facebook/<facebook_id>/<facebook_token>')
+def login_facebook(facebook_id, facebook_token):
+    """
+    With the facebook_{id,token}, find or create a new
+    Account as necessary and return the app_token. Don't
+    wait for a second call to /token because that has a
+    @login_required decorator. Chicken and egg.
+
+    NB: Need to authorize this with actual facebook... or
+    verify that this isn't fake information somehow. Don't
+    trust the callers.
+    """
+    account = create_user_facebook(facebook_id, facebook_token)
+    login_user(account)
+    return account.get_app_token()
+
 
 ###########################
 
@@ -77,7 +136,14 @@ def logout():
 @app.route('/secret')
 @login_required
 def secret():
-    return 'secret reveal'
+    return 'secret reveal: %s' % \
+            (current_user.stringify())
+
+# XXX is there value in this apart from testing?
+@app.route('/token')
+@login_required
+def token():
+    return current_user.get_app_token()
 
 @app.route('/')
 def index():

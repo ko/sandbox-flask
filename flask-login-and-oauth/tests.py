@@ -1,6 +1,8 @@
 import os
 import unittest
 import tempfile
+import base64
+
 from app import app,db
 
 class AppTestCase(unittest.TestCase):
@@ -27,11 +29,27 @@ class AppTestCase(unittest.TestCase):
         rv = self.app.get('/')
         assert 'index page' in rv.data
 
-    def test_facebook_login(self):
+    def get_facebook_login_token(self):
         print '--- test: facebook login ---'
 
-        rv = self.app.get('/login')
-        assert '<title>Redirecting...</title>' in rv.data
+        rv = self.app.get('/login/facebook/123/321')
+        return rv.data
+
+    def open_with_token(self, url, method, token):
+        password='nop'
+        return self.app.open(url, method=method,
+                headers={
+                    'Authorization': 'Basic ' + base64.b64encode(
+                        token + ':' + password)
+                }
+        )
+
+    def test_facebook_login(self):
+        app_token = self.get_facebook_login_token()
+
+        rv = self.open_with_token('/token', 'GET', app_token)
+        assert rv.data == app_token
+      
 
 if __name__ == '__main__':
     unittest.main()
