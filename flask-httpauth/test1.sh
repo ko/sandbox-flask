@@ -5,7 +5,8 @@ curl -i -X POST -H "Content-Type: application/json" \
     -d '{"username":"a","password":"b"}' \
     http://localhost:5000/api/users/add >/dev/null
 
-TOKEN=$(curl -u a:b -i -X GET http://localhost:5000/api/token \
+TOKEN_FULL=$(curl -u a:b -i -X GET http://localhost:5000/api/token)
+TOKEN=$(echo ${TOKEN_FULL} \
     2>/dev/null \
     | grep token \
     | tail -n 1 \
