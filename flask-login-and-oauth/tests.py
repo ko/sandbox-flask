@@ -8,7 +8,6 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         print '--- db setup ---' 
 
-        self.db_fd, app.config['DATABASE'] = tempfile.mkstemp()
         db.create_all()
         app.config['TESTING'] = True
         self.app = app.test_client()
@@ -16,8 +15,8 @@ class AppTestCase(unittest.TestCase):
         print ''
 
     def tearDown(self):
-        os.close(self.db_fd)
-        os.unlink(app.config['DATABASE'])
+        db.session.remove()
+        db.drop_all()
 
         print ''
 
