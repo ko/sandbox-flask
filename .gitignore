@@ -1,3 +1,5 @@
 venv
 *.pyc
 settings.py
+db.sqlite
+*.swp
