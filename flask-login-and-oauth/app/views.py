@@ -112,9 +112,11 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# TODO POST this
-@app.route('/login/facebook/<facebook_id>/<facebook_token>')
-def login_facebook(facebook_id, facebook_token):
+@app.route('/login/facebook', methods = ['POST'])
+def login_facebook():
+    if request.method != 'POST':
+        return abort(405) # method not allowed
+
     """
     With the facebook_{id,token}, find or create a new
     Account as necessary and return the app_token. Don't
@@ -125,8 +127,25 @@ def login_facebook(facebook_id, facebook_token):
     verify that this isn't fake information somehow. Don't
     trust the callers.
     """
-    account = create_user_facebook(facebook_id, facebook_token)
+    facebook_id = request.json.get('facebook_id')
+    if facebook_id is None:
+        abort(400)
+
+    facebook_token = request.json.get('facebook_token')
+    if facebook_token is None:
+        abort(400)
+
+    account = Account.query.filter_by(facebook_token = facebook_token).first() 
+    if account is None:
+        """
+        So if someone can guess a facebook_{id,token} they can
+        log in as them. That's cool! (omg)
+        """
+        account = create_user_facebook(facebook_id, facebook_token)
+
+    # TODO omg
     login_user(account)
+
     return account.get_app_token()
 
 

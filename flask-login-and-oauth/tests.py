@@ -2,6 +2,7 @@ import os
 import unittest
 import tempfile
 import base64
+import json
 
 from app import app,db
 
@@ -29,10 +30,22 @@ class AppTestCase(unittest.TestCase):
         rv = self.app.get('/')
         assert 'index page' in rv.data
 
-    def get_facebook_login_token(self):
+    def get_facebook_login_token(self, facebook_id, facebook_token):
         print '--- test: facebook login ---'
+        data={
+            'facebook_id':facebook_id,
+            'facebook_token':facebook_token,
+        }
+        headers = [('Content-Type', 'application/json')]
+        json_data = json.dumps(data)
+        json_data_length = len(json_data)
+        headers.append(('Content-Length', json_data_length))
 
-        rv = self.app.get('/login/facebook/123/321')
+        rv = self.app.open('/login/facebook',
+            method='POST',
+            headers=headers,
+            data=json_data
+        )
         return rv.data
 
     def open_with_token(self, url, method, token):
@@ -45,7 +58,7 @@ class AppTestCase(unittest.TestCase):
         )
 
     def test_facebook_login(self):
-        app_token = self.get_facebook_login_token()
+        app_token = self.get_facebook_login_token('12345','09876')
 
         rv = self.open_with_token('/token', 'GET', app_token)
         assert rv.data == app_token
