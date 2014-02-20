@@ -1,0 +1,15 @@
+from datetime import timedelta
+
+SECRET_KEY = 'xxx'
+
+FACEBOOK_APP_ID = 'xxx'
+FACEBOOK_APP_SECRET = 'xxx'
+FACEBOOK_APP_SCOPE = 'xxx'
+
+DATABASE_FILE = 'db.sqlite'
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
+SQLALCHEMY_ECHO = True
+
+DEBUG = True
+
+PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
