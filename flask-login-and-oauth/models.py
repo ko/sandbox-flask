@@ -6,7 +6,7 @@ from app import db
 
 import settings
 
-class User(db.Model):
+class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     app_username = db.Column(db.String(255), unique=True)
     app_password = db.Column(db.String(255), unique=True)
