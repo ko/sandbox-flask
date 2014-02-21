@@ -1,4 +1,4 @@
-from flask import Flask, abort, request, jsonify, g, url_for
+from flask import Flask, abort, request, jsonify, g, url_for, redirect
 from flask.ext.httpauth import HTTPBasicAuth
 
 from app import app, db, facebook, auth
@@ -29,10 +29,11 @@ def facebook_authorized(resp):
     g.facebook_token = facebook_token
     me = facebook.get('/me')
 
-    facebook_id = me.data['id']
+    facebook_id = me.data['id'].decode('utf-8')
+
     user = User.query.filter_by(facebook_id = facebook_id).first()
     if user is None:
-        user = User(facebook_id=facebook_id, facebook_token=facebook_token)
+        user = User(facebook_id=facebook_id, facebook_token=facebook_token[0])
         db.session.add(user)
         db.session.commit()
     else:
@@ -40,8 +41,6 @@ def facebook_authorized(resp):
         # XXX check if expired? or keep that in header_loader?
         db.session.add(user)
         db.session.commit()
-
-    login_user(user)
 
     return redirect(next_url)
 
