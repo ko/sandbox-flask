@@ -9,8 +9,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     app_username = db.Column(db.String(255), unique=True)
     app_password = db.Column(db.String(255))
-    facebook_id = db.Column(db.Integer, unique=True)
-    facebook_token = db.Column(db.String(255), unique=True)
+    facebook_id = db.Column(db.Unicode(255,convert_unicode=True), unique=True)
+    facebook_token = db.Column(db.Unicode(255,convert_unicode=True), unique=True)
 
     def __init__(self, app_username='john doe', app_password='password', 
                  facebook_id='fbid', facebook_token='fbtoken'):
