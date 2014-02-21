@@ -3,6 +3,8 @@ from flask.ext.oauth import OAuth
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.httpauth import HTTPBasicAuth
 
+import facebook
+
 from itsdangerous import constant_time_compare, BadData
 
 import settings
@@ -38,6 +40,8 @@ from models import User
 ###########################
 
 
+
+"""
 oauth = OAuth()
 
 facebook = oauth.remote_app('facebook',
@@ -49,6 +53,7 @@ facebook = oauth.remote_app('facebook',
     consumer_secret = settings.FACEBOOK_APP_SECRET,
     request_token_params = { 'scope': settings.FACEBOOK_APP_SCOPE }
 )
+"""
 
 
 ###########################
@@ -57,12 +62,16 @@ facebook = oauth.remote_app('facebook',
 auth = HTTPBasicAuth()
 
 @auth.verify_password
-def verify_password(username_or_token, password):
-    user = User.verify_auth_token(username_or_token)
+def verify_password(username_or_fbid_or_token, password_or_fbtoken):
+    """ this variable is seriously overloaded """
+    user = User.verify_facebook_token(username_or_fbid_or_token, password_or_fbtoken)
     if not user:
-        user = User.query.filter_by(app_username = username_or_token).first()
-        if not user or not user.verify_pass(password):
-            return False
+        user = User.verify_auth_token(username_or_fbid_or_token)
+        if not user:
+            user = User.query.filter_by(app_username = username_or_fbid_or_token).first()
+            if not user or not user.verify_pass(password_or_fbtoken):
+                return False
+    print user
     g.user = user
     return True
 

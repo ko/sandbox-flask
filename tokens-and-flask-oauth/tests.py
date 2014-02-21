@@ -101,6 +101,5 @@ class AppTestCase(unittest.TestCase):
         assert 'user1' in rv.data
 
 
-
 if __name__ == '__main__':
     unittest.main()

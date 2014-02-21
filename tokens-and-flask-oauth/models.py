@@ -12,7 +12,7 @@ class User(db.Model):
     facebook_id = db.Column(db.String(255), unique=True)
     facebook_token = db.Column(db.String(255), unique=True)
 
-    def __init__(self, app_username='john doe', app_password='password', 
+    def __init__(self, app_username='', app_password='', 
                  facebook_id='fbid', facebook_token='fbtoken'):
         self.app_username = app_username
         self.app_password = app_password
@@ -31,6 +31,8 @@ class User(db.Model):
         self.app_password = pwd_context.encrypt(password)
 
     def verify_pass(self, password):
+        if len(password) == 0:
+            return False
         return pwd_context.verify(password, self.app_password)
 
     def generate_auth_token(self, expiration = 600):
@@ -40,6 +42,8 @@ class User(db.Model):
 
     @staticmethod
     def verify_auth_token(token):
+        if len(token) == 0:
+            return None
         s = Serializer(settings.SECRET_KEY)
         try:
             data = s.loads(token)
@@ -50,5 +54,7 @@ class User(db.Model):
         user = User.query.get(data['id'])
         return user
 
-
-
+    @staticmethod
+    def verify_facebook_token(fbid,fbtoken):
+        user = User.query.filter_by(facebook_token=fbtoken,facebook_id=fbid).first()
+        return user

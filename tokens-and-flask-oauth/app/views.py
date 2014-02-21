@@ -1,9 +1,11 @@
-from flask import Flask, abort, request, jsonify, g, url_for, redirect
+from flask import Flask, abort, request, jsonify, g, url_for, redirect, make_response
 from flask.ext.httpauth import HTTPBasicAuth
+from base64 import b64encode
 
 from app import app, db, facebook, auth
 from models import User
 
+"""
 @facebook.tokengetter
 def get_facebook_token():
     """
@@ -17,7 +19,7 @@ def get_facebook_token():
 @app.route('/api/user/facebook/authorized')
 @facebook.authorized_handler
 def facebook_authorized(resp):
-    next_url = request.args.get('next') or url_for('get_user_secret')
+    next_url = request.args.get('next') or url_for('get_auth_token')
 
     if resp is None:
         return 'Access denied: reason=%s error=%s' % (
@@ -36,23 +38,37 @@ def facebook_authorized(resp):
         user = User(facebook_id=facebook_id, facebook_token=facebook_token[0])
         db.session.add(user)
         db.session.commit()
-    else:
-        # TODO don't generate the token _every_ time...
-        # XXX check if expired? or keep that in header_loader?
-        db.session.add(user)
-        db.session.commit()
 
     return redirect(next_url)
+"""
 
 
-@app.route('/api/user/facebook/add', methods=['POST','GET'])
+def verify_facebook(facebok_id, facebook_token):
+    me = facebook.get('/me')
+    print str(me.data)
+
+@app.route('/api/user/facebook/add', methods=['POST'])
 def user_add_facebook():
+    """
     callback=url_for('facebook_authorized', \
             next=request.args.get('next') or request.referrer or None, \
             _external=True)
     return facebook.authorize(callback)
+    """
+    fbid = request.json.get('facebook_id')
+    fbtoken = request.json.get('facebook_token')
 
+    if fbid is None or fbtoken is None:
+        abort(400)
+    user = User.query.filter_by(facebook_id = fbid).first()
+    if user is None or not verify_facebook(fbid,fbtoken):
+        abort(400)
+    
+    user = User(facebook_token=fbtoken, facebook_id=fbid)
+    db.session.add(user)
+    db.session.commit()
 
+    return user.stringify()
 
 
 @app.route('/api/user/add', methods=['POST'])
@@ -85,7 +101,9 @@ def get_user(id):
 @app.route('/api/user/secret')
 @auth.login_required
 def get_user_secret():
-    return jsonify({ 'username': g.user.app_username})
+    if g.user is not None and g.user.app_username is not None:
+        data = { 'username': g.user.app_username }
+    return data
 
 @app.route('/api/user/token')
 @auth.login_required
@@ -96,3 +114,7 @@ def get_auth_token():
 @app.route('/')
 def index():
     return 'index page'
+
+
+
+
