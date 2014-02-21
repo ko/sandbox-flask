@@ -31,8 +31,6 @@ class User(db.Model):
         self.app_password = pwd_context.encrypt(password)
 
     def verify_pass(self, password):
-        if len(password) == 0:
-            return False
         return pwd_context.verify(password, self.app_password)
 
     def generate_auth_token(self, expiration = 600):
@@ -42,8 +40,6 @@ class User(db.Model):
 
     @staticmethod
     def verify_auth_token(token):
-        if len(token) == 0:
-            return None
         s = Serializer(settings.SECRET_KEY)
         try:
             data = s.loads(token)
