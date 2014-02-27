@@ -1,5 +1,6 @@
 from flask import Flask, g, before_first_request
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask_oauthlib.provider import OAuth2Provider
 
 import settings
 
@@ -28,6 +29,13 @@ from models import User
 
 
 ###########################
+
+oauth = OAuth2Provider(app)
+
+@oauth.clientgetter
+def load_client(client_id):
+    return Client.query.filter_by(client_id=client_id).first()
+
 
 def current_user():
     if g.user and g.user.id:
