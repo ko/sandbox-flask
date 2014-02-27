@@ -1,4 +1,4 @@
-from flask import Flask, g
+from flask import Flask, g, before_first_request
 from flask.ext.sqlalchemy import SQLAlchemy
 
 import settings
@@ -29,9 +29,24 @@ from models import User
 
 ###########################
 
+def current_user():
+    if g.user and g.user.id:
+        uid = g.user
+        uid = session['id']
+        return User.query.get(uid)
+    return None
+
+
 
 ###########################
 
+
+@before_first_request
+def setup():
+    db.create_all()
+
+
+###########################
 
 from app import views
 
