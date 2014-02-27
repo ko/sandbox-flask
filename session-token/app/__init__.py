@@ -36,6 +36,20 @@ oauth = OAuth2Provider(app)
 def load_client(client_id):
     return Client.query.filter_by(client_id=client_id).first()
 
+@oauth.grantsetter
+def save_grant(client_id, code, request, *args, **kwargs):
+    # lol 10 second expiration
+    expires = datetime.utcnow() + timedelta(seconds=10)
+    grant = Grant(
+            client_id=client_id,
+            redirect_uri=request.redirect_uri,
+            _scopes=' '.join(request.scopes),
+            user=current_user()
+            expires=expires
+    )
+    db.session.add(grant)
+    db.session.commit()
+    return grant
 
 def current_user():
     if g.user and g.user.id:
