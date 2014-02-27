@@ -1,9 +1,30 @@
 from flask import Flask, abort, request, jsonify, g, url_for, redirect
+from werkzeug.security import gen_salt
 
 from app import app, db
 
 from models import User
 
+
+@app.route('/client')
+def client():
+    user = current_user()
+    if not user:
+        return 'not user?'
+    item = Client(
+            client_id=gen_salt(40),
+            client_secret=gen_salt(50),
+            _redirect_urls='http://localhost:8000/authorized',
+            _default_scopes='email',
+            user_id=user.id,
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    return jsonify(
+            client_id=item.client_id,
+            client_secret=item.client_secret,
+    )
 
 @app.route('/api/user/add', methods=['POST'])
 def user_add():
@@ -21,9 +42,9 @@ def user_add():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({ 'username': user.app_username }), \
-           201, \
-           { 'Location': url_for('get_user', id = user.id, _external = True) }
+    g.user = user
+
+    return jsonify(user.dictify())
 
 @app.route('/api/user/<int:id>')
 def get_user(id):
