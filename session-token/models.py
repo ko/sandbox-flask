@@ -99,7 +99,7 @@ class Token(db.Model):
 
     user_id = db.Column(
             db.Integer, db.ForeignKey('users.id')
-    }
+    )
     user = db.relationship('User')
 
     token_type = db.Column(db.String(40))
