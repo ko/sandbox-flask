@@ -51,6 +51,33 @@ def save_grant(client_id, code, request, *args, **kwargs):
     db.session.commit()
     return grant
 
+@oauth.tokengetter
+def load_token(access_token=None, refresh_token=None):
+    if access_token:
+        return Token.query.filter_by(access_token=access_token).first()
+    elif refresh_token:
+        return Token.query.filter_by(refresh_token=refresh_token).first()
+
+@oauth.tokensetter
+def save_token(token, request, *args, **kwargs):
+    tokens = Token.query.filter_by(
+            client_id=request.client.client_id,
+            user_id=request.user.id
+    ).all()
+
+    db.session.delete(tokens)
+
+    expires_in = token.pop('expires_in')
+    expires = datetime.utcnow() + timedelta(seconds=expires_in)
+
+    t = Token(**token)
+    t.expires = expires
+    t.client_id = request.client.client_id
+    t.user_id = request.user.id
+    db.session.add(tok)
+    db.sesison.commit()
+    return t
+
 def current_user():
     if g.user and g.user.id:
         uid = g.user
