@@ -46,25 +46,6 @@ def user_add():
 
     return jsonify(user.dictify())
 
-@app.route('/api/user/<int:id>')
-def get_user(id):
-    user = User.query.get(id)
-    if not user:
-        abort(400)
-    return jsonify({ 'username': user.app_username})
-
-@app.route('/api/user/secret')
-@auth.login_required
-def get_user_secret():
-    data = { 'username': g.user.app_username }
-    return jsonify(data)
-
-@app.route('/api/user/token')
-@auth.login_required
-def get_auth_token():
-    token = g.user.generate_auth_token()
-    return jsonify( {'token': token.decode('ascii')} )
-
 @app.route('/')
 def index():
     return 'index page'

@@ -1,4 +1,4 @@
-from flask import Flask, g, before_first_request
+from flask import Flask, g
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_oauthlib.provider import OAuth2Provider
 
@@ -44,7 +44,7 @@ def save_grant(client_id, code, request, *args, **kwargs):
             client_id=client_id,
             redirect_uri=request.redirect_uri,
             _scopes=' '.join(request.scopes),
-            user=current_user()
+            user=current_user(),
             expires=expires
     )
     db.session.add(grant)
@@ -63,7 +63,7 @@ def current_user():
 ###########################
 
 
-@before_first_request
+@app.before_first_request
 def setup():
     db.create_all()
 
